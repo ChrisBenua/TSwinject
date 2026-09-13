@@ -1,0 +1,77 @@
+TSwinject
+Copyright (c) 2026 Kristian Benua
+
+This product contains software derived from Swinject
+(https://github.com/Swinject/Swinject), which is distributed under the MIT
+License. The full text of that license is reproduced at the end of this file,
+as required by its terms.
+
+TSwinject implements an API that deliberately mirrors Swinject's so that call
+sites can migrate by swapping the `import`. Some files go further than API
+compatibility and are directly derived from Swinject's source. They are listed
+below.
+
+
+DERIVED FILES
+=============
+
+Substantially verbatim — the implementation is Swinject's, with changes limited
+to access levels, formatting, removed members, and TSwinject-specific additions:
+
+  Sources/TSwinject/Assembly.swift              (c) 2019 Swinject Contributors
+  Sources/TSwinject/Assembler.swift             (c) 2019 Swinject Contributors
+  Sources/TSwinject/GraphIdentifier.swift       (c) 2019 Swinject Contributors
+  Sources/TSwinject/InstanceStorage.swift       (c) 2019 Swinject Contributors
+  Sources/TSwinject/ObjectScope.swift           (c) 2019 Swinject Contributors
+  Sources/TSwinject/ReadWriteLock.swift         (c) 2023 Swinject Contributors
+  Sources/TSwinject/RecursiveLock.swift         (c) 2019 Swinject Contributors
+  Sources/TSwinject/ThreadSafeDictionary.swift  (c) 2023 Swinject Contributors
+
+Structurally derived — reimplemented around TSwinject's boxed-entry design, but
+following Swinject's type layout, member names, and semantics closely enough to
+warrant attribution:
+
+  Sources/TSwinject/Behavior.swift              (c) 2019 Swinject Contributors
+  Sources/TSwinject/Container.swift             (c) 2019 Swinject Contributors
+  Sources/TSwinject/Container.Arguments.swift   (c) 2019 Swinject Contributors
+  Sources/TSwinject/Resolver.swift              (c) 2019 Swinject Contributors
+  Sources/TSwinject/ServiceEntry.swift          (c) 2019 Swinject Contributors
+  Sources/TSwinject/ServiceKey.swift            (c) 2019 Swinject Contributors
+  Sources/TSwinjectSwinjectInterop/Container+Interop.swift
+                                                (c) 2019 Swinject Contributors
+
+Original to TSwinject — no Swinject counterpart:
+
+  Sources/TSwinject/DiEntry.swift
+  Sources/TSwinject/ResolveTracking.swift
+  Sources/TSwinject/TakeoverSink.swift
+  Sources/TSwinject/WeakObjectScope.swift
+  Sources/TSwinject/weakify.swift
+  Sources/TSwinjectMacro/**
+  Sources/TSwinjectMacroPlugin/**
+
+
+SWINJECT LICENSE
+================
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Swinject Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

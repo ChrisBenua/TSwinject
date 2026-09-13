@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The core library has no dependencies, so this job needs no network beyond the
+  # checkout and is the fastest signal. It runs first and on its own so a failure
+  # here is not buried under swift-syntax build output.
+  core:
+    name: Core library
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/.cache/org.swift.swiftpm
+          key: spm-core-${{ runner.os }}-${{ hashFiles('Package.swift') }}
+          restore-keys: spm-core-${{ runner.os }}-
+
+      - run: swift build --target TSwinject
+      - run: swift test --filter TSwinjectTests
+
+  # Interop and the macro. Building the macro plugin compiles swift-syntax, which
+  # is why this job is separate and cached.
+  full:
+    name: Interop + macro
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/.cache/org.swift.swiftpm
+          key: spm-full-${{ runner.os }}-${{ hashFiles('Package.swift') }}
+          restore-keys: spm-full-${{ runner.os }}-
+
+      - run: swift build
+      # Benchmarks are skipped here: they are a measurement, not a pass/fail
+      # assertion, and a shared CI runner cannot produce a number worth trusting.
+      - run: swift test --skip TSwinjectBenchmarks
+
+  # Guards the core library's "no dependencies" promise. See the script's header.
+  isolation:
+    name: Dependency isolation
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./Tests/Fixtures/verify-isolation.sh
+
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install swiftlint
+      # missing_docs is enabled, so an undocumented public declaration fails here.
+      - run: swiftlint --strict
+
+  pods:
+    name: CocoaPods
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      # --quick validates structure without building. A full lint of the interop
+      # and macro specs needs TSwinject published at the matching tag, so those
+      # are verified at release time rather than per-commit.
+      - run: pod lib lint TSwinject.podspec --allow-warnings --skip-tests --platforms=ios
+      - run: pod lib lint TSwinjectSwinjectInterop.podspec --allow-warnings --quick
+      - run: pod lib lint TSwinjectMacro.podspec --allow-warnings --quick

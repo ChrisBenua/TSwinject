@@ -1,0 +1,25 @@
+---
+# TSwinject was excluded from linting in its original home, so this config is
+# tuned to the code as it stands rather than inherited from elsewhere.
+
+only_rules:
+  - missing_docs
+  - explicit_init
+  - operator_usage_whitespace
+  - redundant_optional_initialization
+  - unused_setter_value
+  - vertical_whitespace
+
+missing_docs:
+  warning: [public, open]
+  excludes_extensions: false
+  excludes_inherited_types: true
+  excludes_trivial_init: true
+
+included:
+  - Sources
+
+excluded:
+  - .build
+  - Tests
+  - Example
