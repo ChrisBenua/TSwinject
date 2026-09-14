@@ -2,8 +2,10 @@
 
 **Swinject without the casts.** A dependency-injection container whose public API
 mirrors [Swinject](https://github.com/Swinject/Swinject)'s, so most call sites
-migrate by swapping the `import` — but which resolves ~1.3× faster by never
-casting to a protocol existential.
+migrate by swapping the `import` — but which never casts to a protocol
+existential. In steady state that is ~1.3× faster; on the first resolve of each
+service in a protocol-heavy binary — an app launch, in other words — it is
+[73× faster](#10-000-unique-types-cold-and-warm).
 
 ```swift
 import TSwinject
@@ -35,7 +37,42 @@ That single choice is the entire library. Everything else is API compatibility.
 
 ## Benchmarks
 
-5 protocol-typed services, `.container` scope, 200 000 iterations × 5 resolves:
+All numbers: Apple M2 Max, macOS 26.6.2, Swift 6.3.3, release build. Debug
+numbers are meaningless — the release build is what removes the boxing overhead.
+
+### 10 000 unique types, cold and warm
+
+10 000 distinct protocols, each with one conforming class, registered in the
+default scope and then resolved twice. Best of 5 runs, each in a fresh process:
+
+| phase | Swinject 2.10.0 | TSwinject | |
+|---|---|---|---|
+| register | 1.45 µs | 2.73 µs | 0.53× — TSwinject is *slower* |
+| resolve #1 (cold) | 174.67 µs | 2.37 µs | **73.6× faster** |
+| resolve #2 (warm) | 2.42 µs | 1.22 µs | **2.0× faster** |
+
+The cold first resolve is the one that matters at launch. Swinject's
+`instance as? Service` has to locate a conformance the runtime has never been
+asked for, which means walking the image's conformance records — 175 µs per
+resolve here, 1.75 s to build the whole graph. TSwinject casts to
+`DiEntryConcrete<Service>` instead, never consults the conformance tables, and
+does not care how many protocols the binary contains.
+
+Registration is the honest trade: keying the registry on
+`DiEntryConcrete<Service>.self` forces one generic metadata instantiation per
+service, costing ~13 ms across all 10 000. Paid once, at startup.
+
+```sh
+cd Benchmarks/UniqueTypes && ./run.sh
+```
+
+See [`Benchmarks/UniqueTypes/README.md`](Benchmarks/UniqueTypes/README.md) for
+the methodology — why two executables, and why every sample is a fresh process.
+
+### 5 services, steady state
+
+5 protocol-typed services, `.container` scope, 200 000 iterations × 5 resolves —
+the warmest possible case, and so the smallest honest gap:
 
 | | ns/resolve | resolves/s |
 |---|---|---|
@@ -43,18 +80,12 @@ That single choice is the entire library. Everything else is API compatibility.
 | **TSwinject** | **677** | **1 477 371** |
 | | **1.34× faster** | |
 
-Apple M2 Max, macOS 26.6.2, Swift 6.3.3, release build. `XCTClockMetric` over 5
-runs agrees (0.894 s vs 0.663 s, relative standard deviation under 1%).
-
-Reproduce:
+`XCTClockMetric` over 5 runs agrees (0.894 s vs 0.663 s, relative standard
+deviation under 1%).
 
 ```sh
 swift test -c release --filter ContainerBenchmarkTests
 ```
-
-Debug numbers are meaningless — the release build is what removes the boxing
-overhead. The gap widens with the number of protocol conformances in the binary,
-so an app-sized target should do better than this microbenchmark, not worse.
 
 ## Installation
 

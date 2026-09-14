@@ -49,8 +49,19 @@ header comment in `Container.swift` exists to flag this for future readers.
 - `Tests/TSwinjectMacroTests/` — `MacroExpansionTests` asserts the expanded source;
   `MacroRuntimeTests` exercises `#implements` against a real `Container` and is the
   executable specification of what it generates.
-- `Tests/TSwinjectBenchmarks/` — the benchmark the README quotes. The library's
-  reason to exist lives or dies by this number, so don't regress it silently.
+- `Tests/TSwinjectBenchmarks/` — the 5-service steady-state benchmark the README
+  quotes. The library's reason to exist lives or dies by this number, so don't
+  regress it silently.
+- `Benchmarks/UniqueTypes/` — a **separate SwiftPM package** (`.package(path: "../..")`)
+  holding the 10 000-unique-types benchmark: register once, resolve twice, cold
+  process vs. warm conformance cache. Kept out of the root manifest because it
+  carries ~12 MB of generated sources and a ~9-minute cold build. Two
+  executables (`BenchTSwinject`, `BenchSwinject`) each link exactly one container
+  library; `run.sh` samples each in fresh processes. Everything under a
+  `Generated/` directory is output of `Tools/generate-bench-sources.py` — never
+  hand-edit it, and after changing the generator re-run it and commit the result.
+  This is the benchmark that actually demonstrates the thesis (73× on the cold
+  first resolve); the 5-service one is the warm lower bound.
 
 ## Source file map (what to look at when)
 
@@ -144,6 +155,13 @@ swift test -c release --filter ContainerBenchmarkTests
 `test_rawComparison_printOnly` prints the ns/resolve and speedup quoted in the
 README. Re-measure and update the README table if you touch `Container.swift`,
 `Container.Arguments.swift`, or `DiEntry.swift`.
+
+The 10 000-unique-types benchmark is a separate package and must be run from its
+own directory — it will not be built by the root package's `swift build`:
+
+```sh
+cd Benchmarks/UniqueTypes && ./run.sh --samples 5
+```
 
 Dependency isolation (runs in CI, and should be run after any manifest change):
 
